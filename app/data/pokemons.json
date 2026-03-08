@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Pikachu",
+    "image": "/pikachu.webp",
+    "type": "Electric",
+    "color": "#FFD700",
+    "bg": "from-yellow-900/60 to-yellow-500/20",
+    "glow": "#FFD700",
+    "emoji": "⚡"
+  },
+  {
+    "name": "Sylveon",
+    "image": "/sylveon.webp",
+    "type": "Fairy",
+    "color": "#FF9ECD",
+    "bg": "from-pink-900/60 to-pink-500/20",
+    "glow": "#FF9ECD",
+    "emoji": "🎀"
+  },
+  {
+    "name": "Charizard",
+    "image": "/charizard.webp",
+    "type": "Fire",
+    "color": "#FF6B35",
+    "bg": "from-orange-900/60 to-orange-500/20",
+    "glow": "#FF6B35",
+    "emoji": "🔥"
+  },
+  {
+    "name": "Gengar",
+    "image": "/gengar.webp",
+    "type": "Ghost",
+    "color": "#9B59B6",
+    "bg": "from-purple-900/60 to-purple-500/20",
+    "glow": "#A855F7",
+    "emoji": "👻"
+  },
+  {
+    "name": "Lucario",
+    "image": "/lucario.webp",
+    "type": "Fighting",
+    "color": "#4A90D9",
+    "bg": "from-blue-900/60 to-blue-500/20",
+    "glow": "#60A5FA",
+    "emoji": "🥊"
+  }
+]
