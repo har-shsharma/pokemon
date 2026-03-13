@@ -3,72 +3,72 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { GameScreenProps } from '../utils/interfaces';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const WALL_WIDTH           = 36;
-const PLAYER_W             = 48;
-const PLAYER_H             = 48;
-const OBSTACLE_W           = 36;
-const OBSTACLE_H           = 36;
-const WALL_TILE_H          = 80;
+const WALL_WIDTH = 36;
+const PLAYER_W = 48;
+const PLAYER_H = 48;
+const OBSTACLE_W = 36;
+const OBSTACLE_H = 36;
+const WALL_TILE_H = 80;
 
-const SCROLL_SPEED_START    = 240;
-const SCROLL_SPEED_MAX      = 900;
-const SCROLL_RAMP_PER_MS    = 0.00006;
+const SCROLL_SPEED_START = 240;
+const SCROLL_SPEED_MAX = 1500;
+const SCROLL_RAMP_PER_MS = 0.00006;
 
-const JUMP_DURATION         = 260;
-const SPAWN_INTERVAL_START  = 1800;
-const SPAWN_INTERVAL_MIN    = 550;
-const OBS_SPEED_START       = 330;
-const OBS_SPEED_MAX         = 1200;
+const JUMP_DURATION = 260;
+const SPAWN_INTERVAL_START = 1800;
+const SPAWN_INTERVAL_MIN = 550;
+const OBS_SPEED_START = 330;
+const OBS_SPEED_MAX = 1800;
 const OBS_SPEED_RAMP_PER_MS = 0.00006;
-const SPAWN_SHRINK_PER_MS   = 0.024;
+const SPAWN_SHRINK_PER_MS = 0.024;
 
-const SLIDE_SCORE_THRESHOLD  = 50;
-const SLIDE_SPEED            = 280;
+const SLIDE_SCORE_THRESHOLD = 50;
+const SLIDE_SPEED = 280;
 
 // ── Event system ──────────────────────────────────────────────────────────────
-const EVENT_MILESTONE_EVERY  = 50;
-const EVENT_RANDOM_INTERVAL  = 15000;
-const EVENT_RANDOM_CHANCE    = 0.55;
+const EVENT_MILESTONE_EVERY = 50;
+const EVENT_RANDOM_INTERVAL = 15000;
+const EVENT_RANDOM_CHANCE = 0.55;
 // After this score, multiple events can stack simultaneously
-const MULTI_EVENT_THRESHOLD  = 500;
+const MULTI_EVENT_THRESHOLD = 500;
 
-const WALL_SQUEEZE_DURATION  = 4000;
-const WALL_WIDTH_SQUEEZED    = 72;
-const WALL_WIDTH_NORMAL      = 36;
-const DARK_DURATION          = 3500;
-const SHAKE_DURATION         = 2000;
-const SHAKE_INTENSITY        = 6;
+const WALL_SQUEEZE_DURATION = 4000;
+const WALL_WIDTH_SQUEEZED = 72;
+const WALL_WIDTH_NORMAL = 36;
+const DARK_DURATION = 3500;
+const SHAKE_DURATION = 2000;
+const SHAKE_INTENSITY = 6;
 
-const TRAIL_COUNT   = 5;
+const TRAIL_COUNT = 5;
 const PLAYER_Y_FRAC = 0.62;
 
 // Sprite sheet is 768×96 (8 frames × 96px each).
 // Player div is 48×48, so we render sheet at half size: 384×48.
 // Each frame offset = 96/2 = 48px.
-const FRAME_W  = 96;   // actual frame size in the PNG
-const FRAME_H  = 96;
+const FRAME_W = 96;   // actual frame size in the PNG
+const FRAME_H = 96;
 const ANIM_FPS = 10;
 
 const MAX_DELTA_MS = 50;
 
-type Wall      = 'left' | 'right';
+type Wall = 'left' | 'right';
 type EventType = 'squeeze' | 'dark' | 'shake';
 
 interface ActiveEvent {
-  type:      EventType;
+  type: EventType;
   startedAt: number;   // ts when this event began — each event tracks its own age
 }
 
 interface Obstacle {
-  id:          number;
-  wall:        Wall;
-  y:           number;
-  speed:       number;
-  rotation:    number;
-  sliding:     boolean;
-  slideX:      number;
-  slideDir:    1 | -1;
-  slideSpeed:  number;
+  id: number;
+  wall: Wall;
+  y: number;
+  speed: number;
+  rotation: number;
+  sliding: boolean;
+  slideX: number;
+  slideDir: 1 | -1;
+  slideSpeed: number;
   wobblePhase: number;
 }
 
@@ -91,53 +91,53 @@ function ninjaYOffset(t: number): number {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 function GameScreen({ pokemon, name }: GameScreenProps) {
-  const arenaRef      = useRef<HTMLDivElement>(null);
-  const playerRef     = useRef<HTMLDivElement>(null);
-  const spriteRef     = useRef<HTMLDivElement>(null);
-  const scoreRef      = useRef<HTMLSpanElement>(null);
-  const speedRef      = useRef<HTMLSpanElement>(null);
-  const leftWallRef   = useRef<HTMLDivElement>(null);
-  const rightWallRef  = useRef<HTMLDivElement>(null);
-  const poolRef       = useRef<Map<number, HTMLDivElement>>(new Map());
-  const trailRefs     = useRef<HTMLDivElement[]>([]);
-  const darknessRef   = useRef<HTMLDivElement>(null);
+  const arenaRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
+  const spriteRef = useRef<HTMLDivElement>(null);
+  const scoreRef = useRef<HTMLSpanElement>(null);
+  const speedRef = useRef<HTMLSpanElement>(null);
+  const leftWallRef = useRef<HTMLDivElement>(null);
+  const rightWallRef = useRef<HTMLDivElement>(null);
+  const poolRef = useRef<Map<number, HTMLDivElement>>(new Map());
+  const trailRefs = useRef<HTMLDivElement[]>([]);
+  const darknessRef = useRef<HTMLDivElement>(null);
   const eventLabelRef = useRef<HTMLDivElement>(null);
 
   const g = useRef({
-    wall:          'left' as Wall,
-    jumping:       false,
-    jumpStart:     0,
-    jumpFromWall:  'left' as Wall,
-    obstacles:     [] as Obstacle[],
-    score:         0,
-    scrollSpeed:   SCROLL_SPEED_START,
-    obsSpeed:      OBS_SPEED_START,
-    wallOffset:    0,
-    lastSpawn:     0,
+    wall: 'left' as Wall,
+    jumping: false,
+    jumpStart: 0,
+    jumpFromWall: 'left' as Wall,
+    obstacles: [] as Obstacle[],
+    score: 0,
+    scrollSpeed: SCROLL_SPEED_START,
+    obsSpeed: OBS_SPEED_START,
+    wallOffset: 0,
+    lastSpawn: 0,
     spawnInterval: SPAWN_INTERVAL_START,
-    startTime:     0,
-    lastTs:        0,
-    running:       false,
-    dead:          false,
-    raf:           0,
-    idCounter:     0,
-    trailPositions:    [] as { x: number; y: number }[],
+    startTime: 0,
+    lastTs: 0,
+    running: false,
+    dead: false,
+    raf: 0,
+    idCounter: 0,
+    trailPositions: [] as { x: number; y: number }[],
     slidingObstacleId: -1,
 
     // Event system — array so multiple can run simultaneously
-    activeEvents:     [] as ActiveEvent[],
-    lastMilestone:    0,
-    lastRandomCheck:  0,
-    currentWallW:     WALL_WIDTH_NORMAL,
+    activeEvents: [] as ActiveEvent[],
+    lastMilestone: 0,
+    lastRandomCheck: 0,
+    currentWallW: WALL_WIDTH_NORMAL,
 
-    animFrame:    0,
+    animFrame: 0,
     lastAnimTick: 0,
-    frameCount:   0,
+    frameCount: 0,
   });
 
-  const [phase, setPhase]         = useState<'playing' | 'dead'>('playing');
+  const [phase, setPhase] = useState<'playing' | 'dead'>('playing');
   const [deathScore, setDeathScore] = useState(0);
-  const [highScore,  setHighScore]  = useState<number>(() => {
+  const [highScore, setHighScore] = useState<number>(() => {
     try { return parseInt(localStorage.getItem('pokemon_highscore') ?? '0', 10) || 0; }
     catch { return 0; }
   });
@@ -173,12 +173,12 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
   const jump = useCallback(() => {
     const state = g.current;
     if (!state.running || state.dead || state.jumping) return;
-    state.jumping      = true;
-    state.jumpStart    = performance.now();
+    state.jumping = true;
+    state.jumpStart = performance.now();
     state.jumpFromWall = state.wall;
-    state.wall         = state.wall === 'left' ? 'right' : 'left';
+    state.wall = state.wall === 'left' ? 'right' : 'left';
     state.trailPositions = [];
-    state.animFrame    = 4;
+    state.animFrame = 4;
   }, []);
 
   // ── Main loop ───────────────────────────────────────────────────────────────
@@ -187,9 +187,9 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
     if (!state.running || state.dead) return;
 
     const rawDelta = state.lastTs === 0 ? 16.667 : ts - state.lastTs;
-    const delta    = Math.min(rawDelta, MAX_DELTA_MS);
-    const dt       = delta / 1000;
-    state.lastTs   = ts;
+    const delta = Math.min(rawDelta, MAX_DELTA_MS);
+    const dt = delta / 1000;
+    state.lastTs = ts;
     state.frameCount++;
 
     const { w, h } = getArena();
@@ -197,16 +197,16 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
 
     const elapsed = ts - state.startTime;
     state.scrollSpeed = Math.min(SCROLL_SPEED_MAX, SCROLL_SPEED_START + elapsed * SCROLL_RAMP_PER_MS);
-    state.obsSpeed    = Math.min(OBS_SPEED_MAX,    OBS_SPEED_START    + elapsed * OBS_SPEED_RAMP_PER_MS);
+    state.obsSpeed = Math.min(OBS_SPEED_MAX, OBS_SPEED_START + elapsed * OBS_SPEED_RAMP_PER_MS);
 
     state.wallOffset = (state.wallOffset + state.scrollSpeed * dt) % WALL_TILE_H;
     const bgPos = `0px ${state.wallOffset}px`;
-    if (leftWallRef.current)  leftWallRef.current.style.backgroundPosition = bgPos;
+    if (leftWallRef.current) leftWallRef.current.style.backgroundPosition = bgPos;
     if (rightWallRef.current) rightWallRef.current.style.backgroundPosition = bgPos;
 
     // ── Player position ────────────────────────────────────────────────────
     const targetX = wallX(state.wall, w, state.currentWallW);
-    const fromX   = wallX(state.jumpFromWall, w, state.currentWallW);
+    const fromX = wallX(state.jumpFromWall, w, state.currentWallW);
     let px: number, py: number, rot = 0, scaleX = 1, scaleY = 1;
 
     if (state.jumping) {
@@ -215,7 +215,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
       py = fixedY + ninjaYOffset(t);
       const dir = state.wall === 'right' ? 1 : -1;
       if (t < 0.5) {
-        rot    = dir * 20 * (t / 0.5);
+        rot = dir * 20 * (t / 0.5);
         scaleX = 1 - 0.12 * Math.sin(t * Math.PI);
         scaleY = 1 + 0.12 * Math.sin(t * Math.PI);
       } else {
@@ -235,7 +235,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
     updateSprite(ts, state.jumping, state.wall === 'right');
 
     // ── Event system ──────────────────────────────────────────────────────
-    const allTypes: EventType[] = ['squeeze', 'dark', 'shake'];
+    const ALL_EVENTS: EventType[] = ['squeeze', 'dark', 'shake'];
 
     const pickEvent = (): EventType => {
       // After threshold, any event can stack — pick truly random
@@ -245,16 +245,9 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
       return 'dark';
     };
 
-    const triggerEvent = (type: EventType) => {
-      const multiAllowed = state.score >= MULTI_EVENT_THRESHOLD;
-      const alreadyActive = state.activeEvents.some(ev => ev.type === type);
-      // Before threshold: only one event at a time
-      // After threshold: allow stacking, but not duplicates of same type
-      if (alreadyActive) return;
-      if (!multiAllowed && state.activeEvents.length > 0) return;
-
+    const pushEvent = (type: EventType) => {
+      if (state.activeEvents.some(ev => ev.type === type)) return;
       state.activeEvents.push({ type, startedAt: ts });
-
       if (type === 'dark' && eventLabelRef.current) {
         eventLabelRef.current.textContent = '🌑 LIGHTS OUT!';
         eventLabelRef.current.style.opacity = '1';
@@ -264,16 +257,25 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
       }
     };
 
+    const triggerEvent = () => {
+      if (state.score < MULTI_EVENT_THRESHOLD) {
+        if (state.activeEvents.length === 0) pushEvent(pickEvent());
+      } else {
+        const shuffled = [...ALL_EVENTS].sort(() => Math.random() - 0.5);
+        shuffled.slice(0, 2).forEach(pushEvent);
+      }
+    };
+
     const milestone = Math.floor(state.score / EVENT_MILESTONE_EVERY);
     if (milestone > state.lastMilestone && state.score > 0) {
       state.lastMilestone = milestone;
-      triggerEvent(pickEvent());
+      triggerEvent();
     }
 
     if (state.lastRandomCheck === 0) state.lastRandomCheck = ts;
     if (ts - state.lastRandomCheck > EVENT_RANDOM_INTERVAL) {
       state.lastRandomCheck = ts;
-      if (Math.random() < EVENT_RANDOM_CHANCE) triggerEvent(pickEvent());
+      if (Math.random() < EVENT_RANDOM_CHANCE) triggerEvent();
     }
 
     // ── Resolve each active event independently using its own startedAt ───
@@ -284,7 +286,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
       const age = ts - ev.startedAt;   // ← each event has its own age
 
       if (ev.type === 'squeeze') {
-        const rampIn  = Math.min(1, age / 500);
+        const rampIn = Math.min(1, age / 500);
         const rampOut = age > WALL_SQUEEZE_DURATION - 500
           ? 1 - (WALL_SQUEEZE_DURATION - age) / 500 : 0;
         const t = Math.max(rampIn - rampOut, 0);
@@ -300,7 +302,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
         squeezeActive = true;
         if (age >= WALL_SQUEEZE_DURATION) {
           state.currentWallW = WALL_WIDTH_NORMAL;
-          if (leftWallRef.current)  leftWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
+          if (leftWallRef.current) leftWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
           if (rightWallRef.current) rightWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
           return false; // remove from array
         }
@@ -309,9 +311,9 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
 
       if (ev.type === 'dark') {
         let alpha = 0;
-        if (age < 400)                          alpha = age / 400 * 0.88;
-        else if (age < DARK_DURATION - 400)     alpha = 0.88;
-        else                                    alpha = (1 - (age - (DARK_DURATION - 400)) / 400) * 0.88;
+        if (age < 400) alpha = age / 400 * 0.88;
+        else if (age < DARK_DURATION - 400) alpha = 0.88;
+        else alpha = (1 - (age - (DARK_DURATION - 400)) / 400) * 0.88;
         if (darknessRef.current) darknessRef.current.style.opacity = String(Math.max(0, alpha));
         if (age >= DARK_DURATION) {
           if (darknessRef.current) darknessRef.current.style.opacity = '0';
@@ -342,7 +344,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
     const hardMode = state.score >= SLIDE_SCORE_THRESHOLD;
     const intervalMultiplier = hardMode ? 1.4 : 1.0;
     if (state.lastSpawn === 0 || ts - state.lastSpawn > state.spawnInterval) {
-      state.lastSpawn     = ts;
+      state.lastSpawn = ts;
       state.spawnInterval = Math.max(
         SPAWN_INTERVAL_MIN * intervalMultiplier,
         (SPAWN_INTERVAL_START - elapsed * SPAWN_SHRINK_PER_MS) * intervalMultiplier
@@ -378,13 +380,13 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
     const shakeSpeedMult = isShaking ? 2.0 : 1.0;
 
     for (const o of state.obstacles) {
-      o.y       += o.speed * dt * shakeSpeedMult;
+      o.y += o.speed * dt * shakeSpeedMult;
       o.rotation = (o.rotation + 180 * dt * shakeSpeedMult) % 360;
       if (o.sliding) {
         o.slideX += o.slideDir * o.slideSpeed * dt;
         const minX = state.currentWallW - OBSTACLE_W / 2;
         const maxX = w - state.currentWallW - OBSTACLE_W / 2;
-        if (o.slideX <= minX) { o.slideX = minX; o.slideDir = 1;  }
+        if (o.slideX <= minX) { o.slideX = minX; o.slideDir = 1; }
         if (o.slideX >= maxX) { o.slideX = maxX; o.slideDir = -1; }
         o.wall = o.slideX < w / 2 ? 'left' : 'right';
       }
@@ -393,19 +395,19 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
     // ── Collision ──────────────────────────────────────────────────────────
     for (const o of state.obstacles) {
       const ox = o.sliding ? o.slideX : obstacleX(o.wall, w, state.currentWallW);
-      if (px+5 < ox+OBSTACLE_W && px+PLAYER_W-5 > ox && py+5 < o.y+OBSTACLE_H && py+PLAYER_H-5 > o.y) {
+      if (px + 5 < ox + OBSTACLE_W && px + PLAYER_W - 5 > ox && py + 5 < o.y + OBSTACLE_H && py + PLAYER_H - 5 > o.y) {
         state.dead = true; state.running = false;
         // Clean up all event effects immediately
-        if (darknessRef.current)  darknessRef.current.style.opacity = '0';
-        if (arenaRef.current)     arenaRef.current.style.transform = 'none';
-        if (leftWallRef.current)  leftWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
+        if (darknessRef.current) darknessRef.current.style.opacity = '0';
+        if (arenaRef.current) arenaRef.current.style.transform = 'none';
+        if (leftWallRef.current) leftWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
         if (rightWallRef.current) rightWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
         state.activeEvents = [];
         const finalScore = Math.floor(state.score);
         setDeathScore(finalScore);
         setHighScore(prev => {
           if (finalScore > prev) {
-            try { localStorage.setItem('pokemon_highscore', String(finalScore)); } catch {}
+            try { localStorage.setItem('pokemon_highscore', String(finalScore)); } catch { }
             setNewRecord(true);
             return finalScore;
           }
@@ -448,8 +450,8 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
       if (pos && state.jumping) {
         div.style.backgroundPosition = `${-(state.animFrame * FRAME_W / 2)}px 0px`;
         div.style.transform = `translate(${pos.x}px,${pos.y}px) scale(${1 - i * 0.06})`;
-        div.style.opacity   = String(0.75 - i * 0.12);
-        div.style.display   = 'block';
+        div.style.opacity = String(0.75 - i * 0.12);
+        div.style.display = 'block';
       } else {
         div.style.display = 'none';
       }
@@ -478,7 +480,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
           arena.appendChild(div);
           poolRef.current.set(o.id, div);
         }
-        const baseX  = o.sliding ? o.slideX : obstacleX(o.wall, w, state.currentWallW);
+        const baseX = o.sliding ? o.slideX : obstacleX(o.wall, w, state.currentWallW);
         const wobble = isShaking
           ? Math.sin(ts * 0.018 + o.wobblePhase) * 10
           : 0;
@@ -497,7 +499,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
   const startGame = useCallback(() => {
     for (const [, div] of poolRef.current) div.remove();
     poolRef.current.clear();
-    const now   = performance.now();
+    const now = performance.now();
     const state = g.current;
     Object.assign(state, {
       wall: 'left', jumping: false, jumpStart: 0, jumpFromWall: 'left',
@@ -513,10 +515,10 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
       currentWallW: WALL_WIDTH_NORMAL,
     });
     // Clean up any lingering DOM effects from previous game
-    if (darknessRef.current)  darknessRef.current.style.opacity = '0';
-    if (arenaRef.current)     arenaRef.current.style.transform  = 'none';
-    if (leftWallRef.current)  leftWallRef.current.style.width   = `${WALL_WIDTH_NORMAL}px`;
-    if (rightWallRef.current) rightWallRef.current.style.width  = `${WALL_WIDTH_NORMAL}px`;
+    if (darknessRef.current) darknessRef.current.style.opacity = '0';
+    if (arenaRef.current) arenaRef.current.style.transform = 'none';
+    if (leftWallRef.current) leftWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
+    if (rightWallRef.current) rightWallRef.current.style.width = `${WALL_WIDTH_NORMAL}px`;
     setNewRecord(false);
     setPhase('playing');
     cancelAnimationFrame(state.raf);
@@ -610,7 +612,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
               backgroundSize: `${SHEET_W}px ${SHEET_H}px`,
               backgroundRepeat: 'no-repeat', backgroundPosition: '0px 0px',
               imageRendering: 'pixelated',
-              filter: `blur(${1 + i * 1.5}px) saturate(2) brightness(1.4) drop-shadow(0 0 ${4 + i*3}px ${pokemon.glow})`,
+              filter: `blur(${1 + i * 1.5}px) saturate(2) brightness(1.4) drop-shadow(0 0 ${4 + i * 3}px ${pokemon.glow})`,
             }}
           />
         ))}
@@ -653,7 +655,7 @@ function GameScreen({ pokemon, name }: GameScreenProps) {
               </div>
             )}
             <div className="text-gray-500" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.38rem' }}>
-              {deathScore > 1000 ? 'LEGENDARY!' : deathScore > 500 ? 'IMPRESSIVE!' : deathScore > 250 ? 'KEEP TRYING!' : "DON'T GIVE UP!"}
+              {deathScore > 2000 ? 'LEGENDARY!' : deathScore > 1000 ? 'IMPRESSIVE!' : deathScore > 500 ? 'KEEP TRYING!' : "DON'T GIVE UP!"}
             </div>
             <button onClick={(e) => { e.stopPropagation(); startGame(); }}
               className="mt-2 px-8 py-3 rounded-xl font-black tracking-widest transition-transform active:scale-95 hover:scale-105"
